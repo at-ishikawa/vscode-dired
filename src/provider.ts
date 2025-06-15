@@ -352,6 +352,17 @@ export default class DiredProvider {
         }
     }
 
+    async toggleReadOnly() {
+        if (this._wdiredMode) {
+            // Exit wdired mode and commit changes (like Emacs behavior)
+            await this.exitWdiredMode(true);
+            vscode.window.showInformationMessage('Exited wdired mode (changes committed)');
+        } else {
+            // Enter wdired mode
+            await this.enterWdiredMode();
+        }
+    }
+
     async commitWdiredChanges() {
         if (!this._wdiredDirectory || !this._diredDocument) {
             vscode.window.showErrorMessage('No wdired directory or document found');

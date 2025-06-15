@@ -111,9 +111,6 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         provider.goBackDir();
     });
 
-    const commandWdiredEnter = vscode.commands.registerCommand("extension.dired.wdired.enter", () => {
-        provider.enterWdiredMode();
-    });
 
     const commandWdiredCommit = vscode.commands.registerCommand("extension.dired.wdired.commit", () => {
         provider.exitWdiredMode(true);
@@ -121,6 +118,10 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
 
     const commandWdiredAbort = vscode.commands.registerCommand("extension.dired.wdired.abort", () => {
         provider.exitWdiredMode(false);
+    });
+
+    const commandToggleReadOnly = vscode.commands.registerCommand("extension.dired.toggleReadOnly", () => {
+        provider.toggleReadOnly();
     });
 
     const commandCreateFile = vscode.commands.registerCommand("extension.dired.createFile", async () => {
@@ -225,9 +226,9 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         commandClose,
         commandDelete,
         commandSelect,
-        commandWdiredEnter,
         commandWdiredCommit,
-        commandWdiredAbort
+        commandWdiredAbort,
+        commandToggleReadOnly
     );
 
     vscode.window.onDidChangeActiveTextEditor((editor) => {

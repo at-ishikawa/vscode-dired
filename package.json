@@ -33,16 +33,16 @@
         "title": "Open dired buffer"
       },
       {
-        "command": "extension.dired.wdired.enter",
-        "title": "Enter wdired mode for editing filenames"
-      },
-      {
         "command": "extension.dired.wdired.commit",
         "title": "Commit wdired changes"
       },
       {
         "command": "extension.dired.wdired.abort",
         "title": "Abort wdired changes"
+      },
+      {
+        "command": "extension.dired.toggleReadOnly",
+        "title": "Toggle read-only mode (dired/wdired)"
       }
     ],
     "keybindings": [
@@ -117,9 +117,9 @@
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
-        "key": "ctrl+c ctrl+q",
-        "command": "extension.dired.wdired.enter",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "key": "ctrl+x ctrl+q",
+        "command": "extension.dired.toggleReadOnly",
+        "when": "dired.open && !findWidgetVisible && !inQuickOpen"
       },
       {
         "key": "ctrl+c ctrl+c",
