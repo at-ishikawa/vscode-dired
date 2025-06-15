@@ -132,11 +132,32 @@ export default class DiredProvider {
     }
 
     async reload() {
-        if (!this.dirname) {
+        const currentDir = this.dirname;
+        if (!currentDir || !this._diredDocument || !this._currentDiredFile) {
             return;
         }
-        await this.createBuffer(this.dirname);
-        this._onDidChange.fire(this._diredDocument?.uri || vscode.Uri.parse(''));
+        
+        try {
+            // Recreate buffer content with latest directory state
+            await this.createBuffer(currentDir);
+            
+            // Update the temp file with new content
+            const content = this._buffers.join('\n');
+            fs.writeFileSync(this._currentDiredFile, content);
+            
+            // Update the document content
+            const edit = new vscode.WorkspaceEdit();
+            const fullRange = new vscode.Range(
+                this._diredDocument.positionAt(0),
+                this._diredDocument.positionAt(this._diredDocument.getText().length)
+            );
+            edit.replace(this._diredDocument.uri, fullRange, content);
+            await vscode.workspace.applyEdit(edit);
+            
+            vscode.window.showInformationMessage('Directory refreshed');
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to refresh directory: ${error}`);
+        }
     }
 
     async reloadCurrentBuffer() {
