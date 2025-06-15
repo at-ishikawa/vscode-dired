@@ -134,6 +134,13 @@
           ""
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "wdired",
+        "extensions": [
+          ""
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
@@ -141,6 +148,11 @@
         "language": "dired",
         "scopeName": "source.dired",
         "path": "./dired.tmLanguage.json"
+      },
+      {
+        "language": "wdired",
+        "scopeName": "source.wdired",
+        "path": "./wdired.tmLanguage.json"
       }
     ],
     "configuration": {

@@ -1,0 +1,129 @@
+{
+  "name": "wdired",
+  "scopeName": "source.wdired",
+  "patterns": [
+    {
+      "name": "entity.header.wdired",
+      "match": "^[^:]*:$",
+      "captures": {
+        "0": {
+          "name": "comment.header.wdired"
+        }
+      }
+    },
+    {
+      "name": "entity.directory.wdired",
+      "begin": "^([*\\s])\\s+(d[rwx-]{9})\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+(.*)",
+      "end": "$",
+      "beginCaptures": {
+        "1": {
+          "name": "markup.changed.wdired"
+        },
+        "2": {
+          "name": "constant.numeric.permissions.wdired"
+        },
+        "3": {
+          "name": "entity.name.function.user.wdired"
+        },
+        "4": {
+          "name": "entity.name.function.group.wdired"
+        },
+        "5": {
+          "name": "constant.numeric.size.wdired"
+        },
+        "6": {
+          "name": "constant.numeric.date.wdired"
+        },
+        "7": {
+          "name": "constant.numeric.date.wdired"
+        },
+        "8": {
+          "name": "constant.numeric.time.wdired"
+        },
+        "9": {
+          "name": "entity.name.type.directory.wdired"
+        }
+      }
+    },
+    {
+      "name": "entity.executable.wdired",
+      "begin": "^([*\\s])\\s+([-rwx]{10})\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+(.*)",
+      "end": "$",
+      "beginCaptures": {
+        "1": {
+          "name": "markup.changed.wdired"
+        },
+        "2": {
+          "name": "constant.numeric.permissions.wdired"
+        },
+        "3": {
+          "name": "entity.name.function.user.wdired"
+        },
+        "4": {
+          "name": "entity.name.function.group.wdired"
+        },
+        "5": {
+          "name": "constant.numeric.size.wdired"
+        },
+        "6": {
+          "name": "constant.numeric.date.wdired"
+        },
+        "7": {
+          "name": "constant.numeric.date.wdired"
+        },
+        "8": {
+          "name": "constant.numeric.time.wdired"
+        },
+        "9": {
+          "name": "string.quoted.executable.wdired"
+        }
+      },
+      "patterns": [
+        {
+          "name": "constant.numeric.file.ext.wdired",
+          "match": "(\\.[^\\s]+)$"
+        }
+      ]
+    },
+    {
+      "name": "entity.file.wdired",
+      "begin": "^([*\\s])\\s+([-rwx]{10})\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+([^\\s]+)\\s+(.*)",
+      "end": "$",
+      "beginCaptures": {
+        "1": {
+          "name": "markup.changed.wdired"
+        },
+        "2": {
+          "name": "constant.numeric.permissions.wdired"
+        },
+        "3": {
+          "name": "entity.name.function.user.wdired"
+        },
+        "4": {
+          "name": "entity.name.function.group.wdired"
+        },
+        "5": {
+          "name": "constant.numeric.size.wdired"
+        },
+        "6": {
+          "name": "constant.numeric.date.wdired"
+        },
+        "7": {
+          "name": "constant.numeric.date.wdired"
+        },
+        "8": {
+          "name": "constant.numeric.time.wdired"
+        },
+        "9": {
+          "name": "entity.name.file.wdired"
+        }
+      },
+      "patterns": [
+        {
+          "name": "constant.numeric.file.ext.wdired",
+          "match": "(\\.[^\\s]+)$"
+        }
+      ]
+    }
+  ]
+}

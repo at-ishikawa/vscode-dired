@@ -207,6 +207,9 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
             const document = await vscode.workspace.openTextDocument(tempUri);
             await vscode.window.showTextDocument(document, { preview: false });
             
+            // Set the wdired language mode for syntax highlighting
+            await vscode.languages.setTextDocumentLanguage(document, "wdired");
+            
             vscode.window.showInformationMessage('Entered wdired mode. Edit filenames and press Ctrl+C Ctrl+C to commit or Ctrl+C Ctrl+K to abort.');
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to enter wdired mode: ${error}`);
