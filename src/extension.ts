@@ -24,15 +24,11 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
     }
 
     const provider = new DiredProvider(fixed_window);
-
-    const providerRegistrations = vscode.Disposable.from(
-        vscode.workspace.registerTextDocumentContentProvider(DiredProvider.scheme, provider),
-    );
     const commandOpen = vscode.commands.registerCommand("extension.dired.open", () => {
         let dir = vscode.workspace.rootPath;
         const at = vscode.window.activeTextEditor;
         if (at) {
-            if (at.document.uri.scheme === DiredProvider.scheme) {
+            if (provider.isDiredDocument(at.document)) {
                 dir = provider.dirname;
             } else {
                 const doc = at.document;
@@ -231,19 +227,15 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         commandSelect,
         commandWdiredEnter,
         commandWdiredCommit,
-        commandWdiredAbort,
-        providerRegistrations
+        commandWdiredAbort
     );
 
     vscode.window.onDidChangeActiveTextEditor((editor) => {
-        if (editor && editor.document.uri.scheme === DiredProvider.scheme) {
+        if (editor && provider.isDiredDocument(editor.document)) {
             editor.options = {
                 cursorStyle: vscode.TextEditorCursorStyle.Block,
             };
             vscode.commands.executeCommand('setContext', 'dired.open', true);
-        } else if (editor && provider.isWdiredTempFile(editor.document)) {
-            // We're in a wdired temp file, keep wdired context active
-            vscode.commands.executeCommand('setContext', 'dired.open', false);
         } else {
             vscode.commands.executeCommand('setContext', 'dired.open', false);
         }

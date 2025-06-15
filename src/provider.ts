@@ -10,7 +10,7 @@ import * as autoBox from './autocompletedInputBox'
 
 const FIXED_URI: vscode.Uri = vscode.Uri.parse('dired://fixed_window');
 
-export default class DiredProvider implements vscode.TextDocumentContentProvider {
+export default class DiredProvider {
     static scheme = 'dired'; // ex: dired://<directory>
 
     private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
@@ -20,8 +20,10 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
     private _directoryHistory: string[] = []; // Track directory history for back navigation
     private _wdiredMode: boolean = false; // Track if in wdired edit mode
     private _originalBuffers: string[] = []; // Store original buffer content for revert
-    private _wdiredTempFile: string | null = null; // Temporary file for wdired editing
     private _wdiredDirectory: string | null = null; // Store directory path for wdired mode
+    private _currentDiredFile: string | null = null; // Current dired temp file
+    private _diredDocument: vscode.TextDocument | null = null; // Current dired document
+    private _documentChangeListener: vscode.Disposable | null = null; // Document change listener
 
     constructor(fixed_window: boolean) {
         this._fixed_window = fixed_window;
@@ -29,6 +31,10 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
 
     dispose() {
         this._onDidChange.dispose();
+        if (this._documentChangeListener) {
+            this._documentChangeListener.dispose();
+        }
+        this.cleanupTempFiles();
     }
 
     get onDidChange() {
@@ -41,7 +47,7 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
             return undefined;
         }
         const doc = at.document;
-        if (!doc) {
+        if (!doc || !this.isDiredDocument(doc)) {
             return undefined;
         }
         const line0 = doc.lineAt(0).text;
@@ -49,9 +55,59 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
         return dir;
     }
 
-    isWdiredTempFile(document: vscode.TextDocument): boolean {
-        return this._wdiredTempFile !== null && 
-               document.uri.fsPath === this._wdiredTempFile;
+    isDiredDocument(document: vscode.TextDocument): boolean {
+        return document.languageId === 'dired' || document.languageId === 'wdired' ||
+               (this._currentDiredFile !== null && document.uri.fsPath === this._currentDiredFile);
+    }
+
+    isWdiredMode(document: vscode.TextDocument): boolean {
+        return this._wdiredMode && this.isDiredDocument(document);
+    }
+
+    cleanupTempFiles() {
+        if (this._currentDiredFile && fs.existsSync(this._currentDiredFile)) {
+            try {
+                fs.unlinkSync(this._currentDiredFile);
+            } catch (error) {
+                console.warn('Failed to cleanup dired temp file:', error);
+            }
+        }
+        this._currentDiredFile = null;
+        this._diredDocument = null;
+    }
+
+    setupDocumentChangeListener() {
+        if (this._documentChangeListener) {
+            this._documentChangeListener.dispose();
+        }
+        
+        this._documentChangeListener = vscode.workspace.onDidChangeTextDocument(async (event) => {
+            if (!this.isDiredDocument(event.document)) {
+                return;
+            }
+            
+            // Allow changes in wdired mode
+            if (this._wdiredMode) {
+                return;
+            }
+            
+            // Prevent changes in dired mode
+            if (event.contentChanges.length > 0) {
+                vscode.window.showWarningMessage('Buffer is read-only. Use wdired mode (Ctrl+C Ctrl+E) to edit filenames.');
+                
+                // Revert all changes by restoring original content
+                const edit = new vscode.WorkspaceEdit();
+                const fullRange = new vscode.Range(
+                    event.document.positionAt(0),
+                    event.document.positionAt(event.document.getText().length)
+                );
+                
+                // Restore from the current buffer content
+                const originalContent = this._buffers.join('\n');
+                edit.replace(event.document.uri, fullRange, originalContent);
+                await vscode.workspace.applyEdit(edit);
+            }
+        });
     }
 
     toggleDotFiles() {
@@ -75,12 +131,40 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
         this.openDir(f.path);
     }
 
-    reload() {
+    async reload() {
         if (!this.dirname) {
             return;
         }
-        this.createBuffer(this.dirname)
-            .then(() => this._onDidChange.fire(this.uri));
+        await this.createBuffer(this.dirname);
+        this._onDidChange.fire(this._diredDocument?.uri || vscode.Uri.parse(''));
+    }
+
+    async reloadCurrentBuffer() {
+        if (!this._diredDocument || !this._wdiredDirectory) {
+            return;
+        }
+        
+        try {
+            // Recreate buffer content
+            await this.createBuffer(this._wdiredDirectory);
+            
+            // Update the current file content
+            if (this._currentDiredFile) {
+                const content = this._buffers.join('\n');
+                fs.writeFileSync(this._currentDiredFile, content);
+                
+                // Trigger document reload
+                const edit = new vscode.WorkspaceEdit();
+                const fullRange = new vscode.Range(
+                    this._diredDocument.positionAt(0),
+                    this._diredDocument.positionAt(this._diredDocument.getText().length)
+                );
+                edit.replace(this._diredDocument.uri, fullRange, content);
+                await vscode.workspace.applyEdit(edit);
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to reload buffer: ${error}`);
+        }
     }
 
     async createDir(dirname: string) {
@@ -180,44 +264,41 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
             return;
         }
         
-        // Store the current directory before switching to temp file
+        // Store the current directory and state
         const currentDir = this.dirname;
         if (!currentDir) {
             vscode.window.showErrorMessage('No active dired directory found');
             return;
         }
-        this._wdiredDirectory = currentDir;
+        
+        const currentEditor = vscode.window.activeTextEditor;
+        if (!currentEditor || !this.isDiredDocument(currentEditor.document)) {
+            vscode.window.showErrorMessage('No active dired buffer found');
+            return;
+        }
         
         try {
-            // Create temporary file for editing
-            const tempDir = os.tmpdir();
-            this._wdiredTempFile = path.join(tempDir, `wdired-${Date.now()}.txt`);
-            
-            // Write current buffer content to temp file
-            const content = this._buffers.join('\n');
-            fs.writeFileSync(this._wdiredTempFile, content);
-            
-            // Store original state
-            this._wdiredMode = true;
+            this._wdiredDirectory = currentDir;
             this._originalBuffers = [...this._buffers];
+            this._wdiredMode = true;
+            
+            // Change language mode to wdired for syntax highlighting
+            await vscode.languages.setTextDocumentLanguage(currentEditor.document, "wdired");
+            
+            // Set context for keybindings
             vscode.commands.executeCommand('setContext', 'dired.wdired', true);
-            
-            // Open temp file for editing
-            const tempUri = vscode.Uri.file(this._wdiredTempFile);
-            const document = await vscode.workspace.openTextDocument(tempUri);
-            await vscode.window.showTextDocument(document, { preview: false });
-            
-            // Set the wdired language mode for syntax highlighting
-            await vscode.languages.setTextDocumentLanguage(document, "wdired");
             
             vscode.window.showInformationMessage('Entered wdired mode. Edit filenames and press Ctrl+C Ctrl+C to commit or Ctrl+C Ctrl+K to abort.');
         } catch (error) {
+            this._wdiredMode = false;
+            this._originalBuffers = [];
+            this._wdiredDirectory = null;
             vscode.window.showErrorMessage(`Failed to enter wdired mode: ${error}`);
         }
     }
 
     async exitWdiredMode(commit: boolean = true) {
-        if (!this._wdiredMode || !this._wdiredTempFile) {
+        if (!this._wdiredMode || !this._diredDocument) {
             return;
         }
         
@@ -226,52 +307,42 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
                 await this.commitWdiredChanges();
             }
             
-            // Close the temp file if it's open
-            if (this._wdiredTempFile) {
-                const tempUri = vscode.Uri.file(this._wdiredTempFile);
-                await vscode.commands.executeCommand('workbench.action.closeEditorsInGroup');
-            }
+            // Reset context and language mode
+            vscode.commands.executeCommand('setContext', 'dired.wdired', false);
+            await vscode.languages.setTextDocumentLanguage(this._diredDocument, "dired");
             
-            // Clean up temp file
-            if (fs.existsSync(this._wdiredTempFile)) {
-                fs.unlinkSync(this._wdiredTempFile);
+            // Reload buffer content if changes were committed
+            if (commit) {
+                await this.reloadCurrentBuffer();
             }
             
             // Reset state
             this._wdiredMode = false;
             this._originalBuffers = [];
-            this._wdiredTempFile = null;
             this._wdiredDirectory = null;
-            vscode.commands.executeCommand('setContext', 'dired.wdired', false);
-            
-            // Reload and show the dired buffer
-            await this.reload();
-            const diredUri = this.uri;
-            const document = await vscode.workspace.openTextDocument(diredUri);
-            await vscode.window.showTextDocument(document, this.getTextDocumentShowOptions(true));
             
         } catch (error) {
+            // Reset state even on error
+            this._wdiredMode = false;
+            this._originalBuffers = [];
+            this._wdiredDirectory = null;
+            vscode.commands.executeCommand('setContext', 'dired.wdired', false);
             vscode.window.showErrorMessage(`Error exiting wdired mode: ${error}`);
         }
     }
 
     async commitWdiredChanges() {
-        if (!this._wdiredDirectory || !this._wdiredTempFile) {
-            vscode.window.showErrorMessage('No wdired directory or temp file found');
+        if (!this._wdiredDirectory || !this._diredDocument) {
+            vscode.window.showErrorMessage('No wdired directory or document found');
             return;
         }
 
         try {
-            // First, save the temp file if it's open in an editor
-            const tempUri = vscode.Uri.file(this._wdiredTempFile);
-            const openDoc = vscode.workspace.textDocuments.find(doc => doc.uri.toString() === tempUri.toString());
-            if (openDoc && openDoc.isDirty) {
-                await openDoc.save();
+            // Get current document content
+            const currentLines: string[] = [];
+            for (let i = 0; i < this._diredDocument.lineCount; i++) {
+                currentLines.push(this._diredDocument.lineAt(i).text);
             }
-            
-            // Read the edited content from temp file
-            const editedContent = fs.readFileSync(this._wdiredTempFile, 'utf8');
-            const currentLines = editedContent.split('\n');
 
             const renames: { oldPath: string, newPath: string }[] = [];
             
@@ -309,25 +380,43 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
         }
     }
 
-    openDir(path: string) {
+    async openDir(dirPath: string) {
         const currentDir = this.dirname;
-        if (currentDir && currentDir !== path) {
+        if (currentDir && currentDir !== dirPath) {
             this._directoryHistory.push(currentDir);
         }
         
-        const f = new FileItem(path, "", true); // Incomplete FileItem just to get URI.
-        const uri = f.uri;
-        if (uri) {
-            this.createBuffer(path)
-                .then(() => vscode.workspace.openTextDocument(uri))
-                .then(doc => {
-                    vscode.window.showTextDocument(
-                        doc,
-                        this.getTextDocumentShowOptions(true)
-                    );
-                    vscode.languages.setTextDocumentLanguage(doc, "dired");
-                }
-                );
+        try {
+            // Cleanup previous temp file
+            this.cleanupTempFiles();
+            
+            // Create buffer content
+            await this.createBuffer(dirPath);
+            
+            // Create temporary file for this directory
+            const tempDir = os.tmpdir();
+            const dirBasename = path.basename(dirPath);
+            const timestamp = Date.now();
+            this._currentDiredFile = path.join(tempDir, `.dired-${dirBasename}-${timestamp}.txt`);
+            
+            // Write content to temp file
+            const content = this._buffers.join('\n');
+            fs.writeFileSync(this._currentDiredFile, content);
+            
+            // Open the temp file
+            const tempUri = vscode.Uri.file(this._currentDiredFile);
+            const doc = await vscode.workspace.openTextDocument(tempUri);
+            this._diredDocument = doc;
+            
+            // Show the document
+            await vscode.window.showTextDocument(doc, this.getTextDocumentShowOptions(true));
+            
+            // Set language mode and setup protection
+            await vscode.languages.setTextDocumentLanguage(doc, "dired");
+            this.setupDocumentChangeListener();
+            
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to open directory: ${error}`);
         }
     }
 
@@ -339,26 +428,6 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
         // vscode.window.showErrorMessage(`Could not open file ${uri.fsPath}: ${err}`);
     }
 
-    provideTextDocumentContent(uri: vscode.Uri): string | Thenable<string> {
-        return this.render();
-    }
-
-    private get uri(): vscode.Uri {
-        if (this.dirname) {
-            const f = new FileItem(this.dirname, "", true); // Incomplete FileItem just to get URI.
-            const uri = f.uri;
-            if (uri) {
-                return uri;
-            }
-        }
-        return FIXED_URI;
-    }
-
-    private render(): Thenable<string> {
-        return new Promise((resolve) => {
-            resolve(this._buffers.join('\n'));
-        });
-    }
 
     private createBuffer(dirname: string): Thenable<string[]> {
         return new Promise((resolve) => {
@@ -466,8 +535,7 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
             f.select(value);
             this._buffers[i] = f.line();
         }
-        const uri = this.uri;
-        this._onDidChange.fire(uri);
+        this._onDidChange.fire(this._diredDocument?.uri || vscode.Uri.parse(''));
     }
 
     private getTextDocumentShowOptions(fixed_window: boolean): vscode.TextDocumentShowOptions {
