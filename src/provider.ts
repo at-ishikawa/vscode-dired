@@ -263,20 +263,9 @@ export default class DiredProvider {
         }
         const previousDir = this._directoryHistory.pop();
         if (previousDir) {
-            const f = new FileItem(previousDir, "", true);
-            const uri = f.uri;
-            if (uri) {
-                this.createBuffer(previousDir)
-                    .then(() => vscode.workspace.openTextDocument(uri))
-                    .then(doc => {
-                        vscode.window.showTextDocument(
-                            doc,
-                            this.getTextDocumentShowOptions(true)
-                        );
-                        vscode.languages.setTextDocumentLanguage(doc, "dired");
-                    }
-                    );
-            }
+            // Use openDir without adding to history since we're going back
+            const currentDir = this.dirname;
+            this.openDirWithoutHistory(previousDir);
         }
     }
 
@@ -418,6 +407,14 @@ export default class DiredProvider {
             this._directoryHistory.push(currentDir);
         }
         
+        await this.openDirInternal(dirPath);
+    }
+
+    async openDirWithoutHistory(dirPath: string) {
+        await this.openDirInternal(dirPath);
+    }
+
+    private async openDirInternal(dirPath: string) {
         try {
             // Cleanup previous temp file
             this.cleanupTempFiles();

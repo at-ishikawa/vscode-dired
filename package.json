@@ -98,7 +98,7 @@
       },
       {
         "key": "q",
-        "command": "extension.dired.close",
+        "command": "extension.dired.back",
         "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {

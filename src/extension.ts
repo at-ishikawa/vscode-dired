@@ -107,7 +107,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
     const commandUnselect = vscode.commands.registerCommand("extension.dired.unselect", () => {
         provider.unselect();
     });
-    const commandClose = vscode.commands.registerCommand("extension.dired.close", () => {
+    const commandClose = vscode.commands.registerCommand("extension.dired.back", () => {
         provider.goBackDir();
     });
 
@@ -234,7 +234,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
     const documentCloseHandler = vscode.workspace.onDidCloseTextDocument((document) => {
         if (provider.isDiredDocument(document)) {
             // Check if there are any other dired documents still open
-            const stillHasDiredOpen = vscode.window.visibleTextEditors.some(editor => 
+            const stillHasDiredOpen = vscode.window.visibleTextEditors.some(editor =>
                 provider.isDiredDocument(editor.document)
             );
             if (!stillHasDiredOpen) {
