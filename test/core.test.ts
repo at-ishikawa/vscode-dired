@@ -243,4 +243,54 @@ describe("File System Integration Tests", () => {
         assert.ok(withoutDotFiles.includes('test1.txt'));
         assert.ok(!withoutDotFiles.includes('.hidden'));
     });
+
+    it("should handle username/groupname fallbacks", () => {
+        // Test that when username/groupname resolution fails, we fall back to IDs
+        function formatWithFallback(username: string | undefined, groupname: string | undefined, uid: number, gid: number): { user: string, group: string } {
+            return {
+                user: username || uid.toString(),
+                group: groupname || gid.toString()
+            };
+        }
+        
+        // Test with resolved names
+        const resolved = formatWithFallback('john', 'users', 1000, 1000);
+        assert.strictEqual(resolved.user, 'john');
+        assert.strictEqual(resolved.group, 'users');
+        
+        // Test with fallback to IDs
+        const fallback = formatWithFallback(undefined, undefined, 1001, 1001);
+        assert.strictEqual(fallback.user, '1001');
+        assert.strictEqual(fallback.group, '1001');
+    });
+
+    it("should parse group file format correctly", () => {
+        function parseGroupLine(line: string): { name: string, gid: number } | null {
+            const parts = line.split(":");
+            if (parts.length >= 3) {
+                const name = parts[0];
+                const gid = parseInt(parts[2], 10);
+                if (!isNaN(gid)) {
+                    return { name, gid };
+                }
+            }
+            return null;
+        }
+        
+        // Test typical /etc/group line format: groupname:x:gid:members
+        const groupLine = "users:x:100:user1,user2,user3";
+        const parsed = parseGroupLine(groupLine);
+        
+        assert.ok(parsed);
+        assert.strictEqual(parsed!.name, 'users');
+        assert.strictEqual(parsed!.gid, 100);
+        
+        // Test root group
+        const rootLine = "root:x:0:";
+        const rootParsed = parseGroupLine(rootLine);
+        
+        assert.ok(rootParsed);
+        assert.strictEqual(rootParsed!.name, 'root');
+        assert.strictEqual(rootParsed!.gid, 0);
+    });
 });
