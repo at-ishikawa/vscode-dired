@@ -47,12 +47,7 @@
     ],
     "keybindings": [
       {
-        "key": ".",
-        "command": "extension.dired.toggleDotFiles",
-        "when": "dired.open && editorTextFocus && !inDebugRepl && !dired.wdired"
-      },
-      {
-        "key": "ctrl+x f",
+        "key": "ctrl+x d",
         "command": "extension.dired.open",
         "when": "editorTextFocus && !inDebugRepl"
       },
@@ -62,43 +57,38 @@
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
+        "key": "f",
+        "command": "extension.dired.enter",
+        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+      },
+      {
+        "key": "o",
+        "command": "extension.dired.enter",
+        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+      },
+      {
         "key": "shift+=",
         "command": "extension.dired.createDir",
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
-        "key": "ctrl+x =",
-        "command": "extension.dired.createFile",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
-      },
-      {
-        "key": "shift+r",
+        "key": "r",
         "command": "extension.dired.rename",
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
-        "key": "shift+d",
+        "key": "d",
         "command": "extension.dired.delete",
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
-        "key": "shift+c",
+        "key": "c",
         "command": "extension.dired.copy",
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
-        "key": "shift+b",
+        "key": "^",
         "command": "extension.dired.goUpDir",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
-      },
-      {
-        "key": "m",
-        "command": "extension.dired.select",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
-      },
-      {
-        "key": "u",
-        "command": "extension.dired.unselect",
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
@@ -112,7 +102,22 @@
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
-        "key": "ctrl+c ctrl+e",
+        "key": "n",
+        "command": "cursorDown",
+        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+      },
+      {
+        "key": "space",
+        "command": "cursorDown",
+        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+      },
+      {
+        "key": "p",
+        "command": "cursorUp",
+        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+      },
+      {
+        "key": "ctrl+c ctrl+q",
         "command": "extension.dired.wdired.enter",
         "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
@@ -122,7 +127,7 @@
         "when": "dired.wdired && !findWidgetVisible && !inQuickOpen"
       },
       {
-        "key": "ctrl+c ctrl+k",
+        "key": "ctrl+c escape",
         "command": "extension.dired.wdired.abort",
         "when": "dired.wdired && !findWidgetVisible && !inQuickOpen"
       }
