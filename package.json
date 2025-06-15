@@ -183,7 +183,11 @@
     "lint": "eslint src --ext ts",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "test-vscode": "npm run compile && node ./out/test/runTest.js",
+    "test-unit": "./node_modules/.bin/mocha",
+    "test-watch": "./node_modules/.bin/mocha --watch",
+    "test-all": "npm run test-unit && npm run test-vscode"
   },
   "devDependencies": {
     "@types/glob": "^8.0.0",
@@ -192,11 +196,12 @@
     "@types/vscode": "^1.65.0",
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
+    "@vscode/test-electron": "^2.3.4",
     "eslint": "^8.30.0",
     "glob": "^8.0.3",
     "mocha": "^10.2.0",
-    "typescript": "^4.9.4",
-    "@vscode/test-electron": "^2.3.4"
+    "ts-node": "^10.9.2",
+    "typescript": "^4.9.4"
   },
   "dependencies": {
     "mkdirp": "^1.0.4",

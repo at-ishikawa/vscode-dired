@@ -1,8 +1,13 @@
 {
   "permissions": {
     "allow": [
+      "Bash(npx @vscode/vsce package:*)",
       "Bash(npm run compile:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npm run test-unit:*)",
+      "Bash(npm run test-vscode:*)",
+      "Bash(npm run test-all:*)",
+      "Bash(npm test)"
     ],
     "deny": []
   }

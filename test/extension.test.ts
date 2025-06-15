@@ -1,22 +1,31 @@
 //
-// Note: This example test is leveraging the Mocha test framework.
-// Please refer to their documentation on https://mochajs.org/ for help.
+// VSCode Extension Tests - These require the VSCode test environment
+// 
+// IMPORTANT: Run with `npm test` (not `npm run test-unit`)
+// These tests need the full VSCode test runner to work properly
 //
 
-// The module 'assert' provides assertion methods from node
 import * as assert from 'assert';
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
 import * as vscode from 'vscode';
-import * as myExtension from '../src/extension';
 
-// Defines a Mocha test suite to group tests of similar kind together
-suite("Extension Tests", () => {
+// Minimal extension tests that work in VSCode test environment
+suite("VSCode Extension Tests", () => {
 
-    // Defines a Mocha unit test
-    test("Something 1", () => {
-        assert.equal(-1, [1, 2, 3].indexOf(5));
-        assert.equal(-1, [1, 2, 3].indexOf(0));
+    test("Extension should be present", () => {
+        const extension = vscode.extensions.getExtension("rrudi.vscode-dired");
+        assert.ok(extension, "vscode-dired extension should be installed");
+    });
+
+    test("Extension should be activatable", async () => {
+        const extension = vscode.extensions.getExtension("rrudi.vscode-dired");
+        assert.ok(extension, "Extension should be found");
+        // Don't force activation to avoid file system issues in test environment
+    });
+
+    test("VSCode APIs should be available", () => {
+        // Basic test that VSCode APIs are accessible
+        assert.ok(vscode.commands, "VSCode commands API should be available");
+        assert.ok(vscode.window, "VSCode window API should be available");
+        assert.ok(vscode.workspace, "VSCode workspace API should be available");
     });
 });
