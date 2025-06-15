@@ -54,82 +54,82 @@
       {
         "key": "enter",
         "command": "extension.dired.enter",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "f",
         "command": "extension.dired.enter",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "o",
         "command": "extension.dired.enter",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "shift+=",
         "command": "extension.dired.createDir",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "r",
         "command": "extension.dired.rename",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "d",
         "command": "extension.dired.delete",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "c",
         "command": "extension.dired.copy",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "^",
         "command": "extension.dired.goUpDir",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "g",
         "command": "extension.dired.refresh",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "q",
         "command": "extension.dired.close",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "n",
         "command": "cursorDown",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "space",
         "command": "cursorDown",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "p",
         "command": "cursorUp",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
         "key": "ctrl+x ctrl+q",
         "command": "extension.dired.toggleReadOnly",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen"
+        "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen"
       },
       {
         "key": "ctrl+c ctrl+c",
         "command": "extension.dired.wdired.commit",
-        "when": "dired.wdired && !findWidgetVisible && !inQuickOpen"
+        "when": "dired.wdired && editorTextFocus && !findWidgetVisible && !inQuickOpen"
       },
       {
         "key": "ctrl+c escape",
         "command": "extension.dired.wdired.abort",
-        "when": "dired.wdired && !findWidgetVisible && !inQuickOpen"
+        "when": "dired.wdired && editorTextFocus && !findWidgetVisible && !inQuickOpen"
       }
     ],
     "languages": [

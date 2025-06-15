@@ -212,6 +212,38 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
 
     });
 
+    // Event handlers
+    const activeEditorHandler = vscode.window.onDidChangeActiveTextEditor((editor) => {
+        if (editor && provider.isDiredDocument(editor.document)) {
+            editor.options = {
+                cursorStyle: vscode.TextEditorCursorStyle.Block,
+            };
+            vscode.commands.executeCommand('setContext', 'dired.open', true);
+            // Also check if it's in wdired mode
+            if (provider.isWdiredMode(editor.document)) {
+                vscode.commands.executeCommand('setContext', 'dired.wdired', true);
+            } else {
+                vscode.commands.executeCommand('setContext', 'dired.wdired', false);
+            }
+        } else {
+            vscode.commands.executeCommand('setContext', 'dired.open', false);
+            vscode.commands.executeCommand('setContext', 'dired.wdired', false);
+        }
+    });
+
+    const documentCloseHandler = vscode.workspace.onDidCloseTextDocument((document) => {
+        if (provider.isDiredDocument(document)) {
+            // Check if there are any other dired documents still open
+            const stillHasDiredOpen = vscode.window.visibleTextEditors.some(editor => 
+                provider.isDiredDocument(editor.document)
+            );
+            if (!stillHasDiredOpen) {
+                vscode.commands.executeCommand('setContext', 'dired.open', false);
+                vscode.commands.executeCommand('setContext', 'dired.wdired', false);
+            }
+        }
+    });
+
     context.subscriptions.push(
         provider,
         commandOpen,
@@ -228,19 +260,11 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         commandSelect,
         commandWdiredCommit,
         commandWdiredAbort,
-        commandToggleReadOnly
+        commandToggleReadOnly,
+        activeEditorHandler,
+        documentCloseHandler
     );
 
-    vscode.window.onDidChangeActiveTextEditor((editor) => {
-        if (editor && provider.isDiredDocument(editor.document)) {
-            editor.options = {
-                cursorStyle: vscode.TextEditorCursorStyle.Block,
-            };
-            vscode.commands.executeCommand('setContext', 'dired.open', true);
-        } else {
-            vscode.commands.executeCommand('setContext', 'dired.open', false);
-        }
-    });
 
     return {
         DiredProvider: provider,

@@ -19,7 +19,7 @@ Filer used by only keyboard.
 Keybindings follow standard Emacs dired conventions as default:
 
 ### Opening Dired
-- `Ctrl+X D` - Open dired buffer
+- `Ctrl+X d` - Open dired buffer
 
 ### Navigation
 - `n` / `Space` - Move cursor down to next file
