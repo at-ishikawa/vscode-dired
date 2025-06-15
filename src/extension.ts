@@ -115,6 +115,18 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         provider.goBackDir();
     });
 
+    const commandWdiredEnter = vscode.commands.registerCommand("extension.dired.wdired.enter", () => {
+        provider.enterWdiredMode();
+    });
+
+    const commandWdiredCommit = vscode.commands.registerCommand("extension.dired.wdired.commit", () => {
+        provider.exitWdiredMode(true);
+    });
+
+    const commandWdiredAbort = vscode.commands.registerCommand("extension.dired.wdired.abort", () => {
+        provider.exitWdiredMode(false);
+    });
+
     const commandCreateFile = vscode.commands.registerCommand("extension.dired.createFile", async () => {
         function* completionFunc(filePathOrDirPath: string): IterableIterator<vscode.QuickPickItem> {
             let dirname: string;
@@ -217,6 +229,9 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         commandClose,
         commandDelete,
         commandSelect,
+        commandWdiredEnter,
+        commandWdiredCommit,
+        commandWdiredAbort,
         providerRegistrations
     );
 
@@ -226,6 +241,9 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
                 cursorStyle: vscode.TextEditorCursorStyle.Block,
             };
             vscode.commands.executeCommand('setContext', 'dired.open', true);
+        } else if (editor && provider.isWdiredTempFile(editor.document)) {
+            // We're in a wdired temp file, keep wdired context active
+            vscode.commands.executeCommand('setContext', 'dired.open', false);
         } else {
             vscode.commands.executeCommand('setContext', 'dired.open', false);
         }

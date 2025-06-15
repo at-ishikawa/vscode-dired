@@ -31,6 +31,18 @@
       {
         "command": "extension.dired.open",
         "title": "Open dired buffer"
+      },
+      {
+        "command": "extension.dired.wdired.enter",
+        "title": "Enter wdired mode for editing filenames"
+      },
+      {
+        "command": "extension.dired.wdired.commit",
+        "title": "Commit wdired changes"
+      },
+      {
+        "command": "extension.dired.wdired.abort",
+        "title": "Abort wdired changes"
       }
     ],
     "keybindings": [
@@ -97,7 +109,22 @@
       {
         "key": "q",
         "command": "extension.dired.close",
-        "when": "dired.open && !findWidgetVisible && !inQuickOpen"
+        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+      },
+      {
+        "key": "ctrl+c ctrl+e",
+        "command": "extension.dired.wdired.enter",
+        "when": "dired.open && !findWidgetVisible && !inQuickOpen && !dired.wdired"
+      },
+      {
+        "key": "ctrl+c ctrl+c",
+        "command": "extension.dired.wdired.commit",
+        "when": "dired.wdired && !findWidgetVisible && !inQuickOpen"
+      },
+      {
+        "key": "ctrl+c ctrl+k",
+        "command": "extension.dired.wdired.abort",
+        "when": "dired.wdired && !findWidgetVisible && !inQuickOpen"
       }
     ],
     "languages": [

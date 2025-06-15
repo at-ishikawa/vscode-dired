@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 import FileItem from './fileItem';
 import * as autoBox from './autocompletedInputBox'
@@ -17,6 +18,10 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
     private _show_dot_files: boolean = true;
     private _buffers: string[]; // This is a temporary buffer. Reused by multiple tabs.
     private _directoryHistory: string[] = []; // Track directory history for back navigation
+    private _wdiredMode: boolean = false; // Track if in wdired edit mode
+    private _originalBuffers: string[] = []; // Store original buffer content for revert
+    private _wdiredTempFile: string | null = null; // Temporary file for wdired editing
+    private _wdiredDirectory: string | null = null; // Store directory path for wdired mode
 
     constructor(fixed_window: boolean) {
         this._fixed_window = fixed_window;
@@ -42,6 +47,11 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
         const line0 = doc.lineAt(0).text;
         const dir = line0.substring(0, line0.length - 1);
         return dir;
+    }
+
+    isWdiredTempFile(document: vscode.TextDocument): boolean {
+        return this._wdiredTempFile !== null && 
+               document.uri.fsPath === this._wdiredTempFile;
     }
 
     toggleDotFiles() {
@@ -162,6 +172,137 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
                     }
                     );
             }
+        }
+    }
+
+    async enterWdiredMode() {
+        if (this._wdiredMode) {
+            return;
+        }
+        
+        // Store the current directory before switching to temp file
+        const currentDir = this.dirname;
+        if (!currentDir) {
+            vscode.window.showErrorMessage('No active dired directory found');
+            return;
+        }
+        this._wdiredDirectory = currentDir;
+        
+        try {
+            // Create temporary file for editing
+            const tempDir = os.tmpdir();
+            this._wdiredTempFile = path.join(tempDir, `wdired-${Date.now()}.txt`);
+            
+            // Write current buffer content to temp file
+            const content = this._buffers.join('\n');
+            fs.writeFileSync(this._wdiredTempFile, content);
+            
+            // Store original state
+            this._wdiredMode = true;
+            this._originalBuffers = [...this._buffers];
+            vscode.commands.executeCommand('setContext', 'dired.wdired', true);
+            
+            // Open temp file for editing
+            const tempUri = vscode.Uri.file(this._wdiredTempFile);
+            const document = await vscode.workspace.openTextDocument(tempUri);
+            await vscode.window.showTextDocument(document, { preview: false });
+            
+            vscode.window.showInformationMessage('Entered wdired mode. Edit filenames and press Ctrl+C Ctrl+C to commit or Ctrl+C Ctrl+K to abort.');
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to enter wdired mode: ${error}`);
+        }
+    }
+
+    async exitWdiredMode(commit: boolean = true) {
+        if (!this._wdiredMode || !this._wdiredTempFile) {
+            return;
+        }
+        
+        try {
+            if (commit) {
+                await this.commitWdiredChanges();
+            }
+            
+            // Close the temp file if it's open
+            if (this._wdiredTempFile) {
+                const tempUri = vscode.Uri.file(this._wdiredTempFile);
+                await vscode.commands.executeCommand('workbench.action.closeEditorsInGroup');
+            }
+            
+            // Clean up temp file
+            if (fs.existsSync(this._wdiredTempFile)) {
+                fs.unlinkSync(this._wdiredTempFile);
+            }
+            
+            // Reset state
+            this._wdiredMode = false;
+            this._originalBuffers = [];
+            this._wdiredTempFile = null;
+            this._wdiredDirectory = null;
+            vscode.commands.executeCommand('setContext', 'dired.wdired', false);
+            
+            // Reload and show the dired buffer
+            await this.reload();
+            const diredUri = this.uri;
+            const document = await vscode.workspace.openTextDocument(diredUri);
+            await vscode.window.showTextDocument(document, this.getTextDocumentShowOptions(true));
+            
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error exiting wdired mode: ${error}`);
+        }
+    }
+
+    async commitWdiredChanges() {
+        if (!this._wdiredDirectory || !this._wdiredTempFile) {
+            vscode.window.showErrorMessage('No wdired directory or temp file found');
+            return;
+        }
+
+        try {
+            // First, save the temp file if it's open in an editor
+            const tempUri = vscode.Uri.file(this._wdiredTempFile);
+            const openDoc = vscode.workspace.textDocuments.find(doc => doc.uri.toString() === tempUri.toString());
+            if (openDoc && openDoc.isDirty) {
+                await openDoc.save();
+            }
+            
+            // Read the edited content from temp file
+            const editedContent = fs.readFileSync(this._wdiredTempFile, 'utf8');
+            const currentLines = editedContent.split('\n');
+
+            const renames: { oldPath: string, newPath: string }[] = [];
+            
+            for (let i = 1; i < Math.min(this._originalBuffers.length, currentLines.length); i++) {
+                const originalLine = this._originalBuffers[i];
+                const currentLine = currentLines[i];
+                
+                if (originalLine !== currentLine) {
+                    const originalFilename = originalLine.substring(52);
+                    const currentFilename = currentLine.substring(52);
+                    
+                    if (originalFilename !== currentFilename && originalFilename !== '.' && originalFilename !== '..') {
+                        const oldPath = path.join(this._wdiredDirectory, originalFilename);
+                        const newPath = path.join(this._wdiredDirectory, currentFilename);
+                        renames.push({ oldPath, newPath });
+                    }
+                }
+            }
+
+            let errorCount = 0;
+            for (const { oldPath, newPath } of renames) {
+                try {
+                    fs.renameSync(oldPath, newPath);
+                } catch (error) {
+                    errorCount++;
+                    vscode.window.showErrorMessage(`Failed to rename ${path.basename(oldPath)}: ${error}`);
+                }
+            }
+
+            if (renames.length > 0) {
+                vscode.window.showInformationMessage(`Wdired: ${renames.length - errorCount} file(s) renamed successfully`);
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error reading wdired changes: ${error}`);
         }
     }
 
