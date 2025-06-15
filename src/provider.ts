@@ -16,6 +16,7 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
     private _fixed_window: boolean;
     private _show_dot_files: boolean = true;
     private _buffers: string[]; // This is a temporary buffer. Reused by multiple tabs.
+    private _directoryHistory: string[] = []; // Track directory history for back navigation
 
     constructor(fixed_window: boolean) {
         this._fixed_window = fixed_window;
@@ -140,7 +141,36 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
         this.openDir(p);
     }
 
+    goBackDir() {
+        if (this._directoryHistory.length === 0) {
+            vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            return;
+        }
+        const previousDir = this._directoryHistory.pop();
+        if (previousDir) {
+            const f = new FileItem(previousDir, "", true);
+            const uri = f.uri;
+            if (uri) {
+                this.createBuffer(previousDir)
+                    .then(() => vscode.workspace.openTextDocument(uri))
+                    .then(doc => {
+                        vscode.window.showTextDocument(
+                            doc,
+                            this.getTextDocumentShowOptions(true)
+                        );
+                        vscode.languages.setTextDocumentLanguage(doc, "dired");
+                    }
+                    );
+            }
+        }
+    }
+
     openDir(path: string) {
+        const currentDir = this.dirname;
+        if (currentDir && currentDir !== path) {
+            this._directoryHistory.push(currentDir);
+        }
+        
         const f = new FileItem(path, "", true); // Incomplete FileItem just to get URI.
         const uri = f.uri;
         if (uri) {

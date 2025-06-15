@@ -29,7 +29,7 @@ Filer used by only keyboard.
 - `g`
   - Refresh current directory contents.
 - `q`
-  - Close.
+  - Go back to previous directory (or close if no history).
 
 ## LICENSE
 
