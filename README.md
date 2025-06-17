@@ -1,8 +1,8 @@
 # vscode-dired
 
-*vscode-dired* is an File Manager (or Directory Editor) for VS Code.
+*vscode-dired* is an File Manager (or Directory Editor) for VS Code, forked from [shirou's vscode-dired](https://github.com/shirou/vscode-dired).
 
-![vscode-dired Demo](https://github.com/shirou/vscode-dired/raw/master/vscode-dired.gif)
+![vscode-dired Demo](https://github.com/at-ishikawa/vscode-dired/raw/master/vscode-dired.gif)
 
 This is a port from Emacs dired-mode.
 

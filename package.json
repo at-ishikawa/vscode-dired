@@ -1,16 +1,16 @@
 {
-  "name": "vscode-dired",
-  "displayName": "vscode-dired",
+  "name": "vscode-dired-mode",
+  "displayName": "vscode-dired-mode",
   "description": "dired(File Manager) for VSCode, like Emacs",
-  "version": "0.0.9",
-  "publisher": "rrudi",
+  "version": "0.1.0",
+  "publisher": "at-ishikawa",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shirou/vscode-dired"
+    "url": "https://github.com/at-ishikawa/vscode-dired"
   },
   "bugs": {
-    "url": "https://github.com/shirou/vscode-dired/issues"
+    "url": "https://github.com/at-ishikawa/vscode-dired/issues"
   },
   "engines": {
     "vscode": "^1.65.0"
