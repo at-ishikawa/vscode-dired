@@ -100,11 +100,29 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
             await provider.rename(newPath);
         }
     });
-    const commandCopy = vscode.commands.registerCommand("extension.dired.copy", () => {
-        vscode.window.showInputBox()
-            .then((newName: string) => {
-                provider.copy(newName);
-            });
+    const commandCopy = vscode.commands.registerCommand("extension.dired.copy", async () => {
+        const f = provider.getFile();
+        if (!f) {
+            vscode.window.showErrorMessage("No file selected");
+            return;
+        }
+        
+        const currentDir = provider.dirname;
+        if (!currentDir) {
+            vscode.window.showErrorMessage("No current directory found");
+            return;
+        }
+        
+        const currentPath = path.join(currentDir, f.fileName);
+        const newPath = await vscode.window.showInputBox({
+            prompt: "Copy to path (copy file/directory)",
+            value: currentPath,
+            valueSelection: [currentPath.lastIndexOf('/') + 1, currentPath.length]
+        });
+        
+        if (newPath) {
+            await provider.copy(newPath);
+        }
     });
 
     const commandDelete = vscode.commands.registerCommand("extension.dired.delete", () => {

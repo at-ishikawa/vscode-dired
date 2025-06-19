@@ -423,6 +423,149 @@ describe("File System Integration Tests", () => {
         }
     });
 
+    it("should copy files and directories with dired provider logic", () => {
+        // Simulate the DiredProvider copy logic
+        function simulateCopy(currentDir: string, fileName: string, newPath: string): { success: boolean, message?: string, error?: string } {
+            try {
+                const oldPath = path.join(currentDir, fileName);
+                
+                if (!fs.existsSync(oldPath)) {
+                    return { success: false, error: `File ${fileName} does not exist` };
+                }
+                
+                // Handle absolute vs relative paths
+                let targetPath: string;
+                if (path.isAbsolute(newPath)) {
+                    targetPath = newPath;
+                } else {
+                    targetPath = path.join(currentDir, newPath);
+                }
+                
+                let newFileName = path.basename(targetPath);
+                // Check if target path is an existing directory
+                if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
+                    targetPath = path.join(targetPath, fileName);
+                    newFileName = fileName;
+                }
+
+                // Create target directory if it doesn't exist
+                const targetDir = path.dirname(targetPath);
+                if (!fs.existsSync(targetDir)) {
+                    fs.mkdirSync(targetDir, { recursive: true });
+                }
+
+                // Check if source is directory or file and copy accordingly
+                const sourceStat = fs.statSync(oldPath);
+                if (sourceStat.isDirectory()) {
+                    copyDirectoryRecursive(oldPath, targetPath);
+                } else {
+                    fs.copyFileSync(oldPath, targetPath);
+                }
+
+                if (fileName === newFileName) {
+                    return { success: true, message: `${fileName} copied to ${targetPath}` };
+                } else {
+                    return { success: true, message: `${fileName} copied as ${newFileName}` };
+                }
+            } catch (error) {
+                return { success: false, error: `Failed to copy: ${error}` };
+            }
+        }
+
+        function copyDirectoryRecursive(source: string, target: string): void {
+            // Create target directory
+            if (!fs.existsSync(target)) {
+                fs.mkdirSync(target, { recursive: true });
+            }
+
+            // Read directory contents
+            const items = fs.readdirSync(source);
+            
+            for (const item of items) {
+                const sourcePath = path.join(source, item);
+                const targetPath = path.join(target, item);
+                const stat = fs.statSync(sourcePath);
+
+                if (stat.isDirectory()) {
+                    copyDirectoryRecursive(sourcePath, targetPath);
+                } else {
+                    fs.copyFileSync(sourcePath, targetPath);
+                }
+            }
+        }
+
+        // Create test directories and files
+        const copyTestDir = path.join(tempDir, 'copy_test');
+        const sourceDir = path.join(copyTestDir, 'source');
+        const targetDir = path.join(copyTestDir, 'target');
+        
+        fs.mkdirSync(copyTestDir);
+        fs.mkdirSync(sourceDir);
+        fs.mkdirSync(targetDir);
+        
+        // Create test files and subdirectory
+        fs.writeFileSync(path.join(sourceDir, 'file1.txt'), 'content1');
+        fs.writeFileSync(path.join(sourceDir, 'file2.md'), 'content2');
+        
+        const subDir = path.join(sourceDir, 'subdir');
+        fs.mkdirSync(subDir);
+        fs.writeFileSync(path.join(subDir, 'nested.txt'), 'nested content');
+
+        // Test 1: Copy file to existing directory (preserves filename)
+        const result1 = simulateCopy(sourceDir, 'file1.txt', path.join(copyTestDir, 'target'));
+        assert.strictEqual(result1.success, true);
+        assert.ok(result1.message?.includes('copied to'));
+        assert.ok(fs.existsSync(path.join(targetDir, 'file1.txt')));
+        assert.ok(fs.existsSync(path.join(sourceDir, 'file1.txt'))); // Original still exists
+
+        // Test 2: Copy file with new name
+        const result2 = simulateCopy(sourceDir, 'file2.md', path.join(copyTestDir, 'target', 'renamed.md'));
+        assert.strictEqual(result2.success, true);
+        assert.ok(result2.message?.includes('copied as'));
+        assert.ok(fs.existsSync(path.join(targetDir, 'renamed.md')));
+
+        // Test 3: Copy directory recursively
+        const result3 = simulateCopy(sourceDir, 'subdir', path.join(copyTestDir, 'target'));
+        assert.strictEqual(result3.success, true);
+        assert.ok(result3.message?.includes('copied to'));
+        assert.ok(fs.existsSync(path.join(targetDir, 'subdir')));
+        assert.ok(fs.existsSync(path.join(targetDir, 'subdir', 'nested.txt')));
+        assert.ok(fs.existsSync(path.join(subDir, 'nested.txt'))); // Original still exists
+
+        // Test 4: Copy to non-existent directory (should create it)
+        const result4 = simulateCopy(sourceDir, 'file1.txt', path.join(copyTestDir, 'new_location', 'copy.txt'));
+        assert.strictEqual(result4.success, true);
+        assert.ok(fs.existsSync(path.join(copyTestDir, 'new_location', 'copy.txt')));
+
+        // Test 5: Try to copy non-existent file
+        const result5 = simulateCopy(sourceDir, 'nonexistent.txt', path.join(copyTestDir, 'anywhere.txt'));
+        assert.strictEqual(result5.success, false);
+        assert.ok(result5.error?.includes('does not exist'));
+
+        // Verify file contents are preserved
+        const originalContent = fs.readFileSync(path.join(sourceDir, 'file1.txt'), 'utf8');
+        const copiedContent = fs.readFileSync(path.join(targetDir, 'file1.txt'), 'utf8');
+        assert.strictEqual(originalContent, copiedContent);
+
+        // Clean up test directory
+        function removeDirectory(dirPath: string) {
+            if (fs.existsSync(dirPath)) {
+                const files = fs.readdirSync(dirPath);
+                for (const file of files) {
+                    const filePath = path.join(dirPath, file);
+                    if (fs.statSync(filePath).isDirectory()) {
+                        removeDirectory(filePath);
+                    } else {
+                        fs.unlinkSync(filePath);
+                    }
+                }
+                fs.rmdirSync(dirPath);
+            }
+        }
+        
+        removeDirectory(copyTestDir);
+    });
+
     it("should filter directories correctly", () => {
         function filterFiles(files: string[], showDotFiles: boolean): string[] {
             return files.filter(filename => {

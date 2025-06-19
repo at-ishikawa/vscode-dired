@@ -82,7 +82,7 @@
         "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
-        "key": "c",
+        "key": "shift+c",
         "command": "extension.dired.copy",
         "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },

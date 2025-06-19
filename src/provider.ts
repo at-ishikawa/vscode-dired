@@ -248,14 +248,76 @@ export default class DiredProvider {
         }
     }
 
-    copy(newName: string) {
+    async copy(newPath: string) {
         const f = this.getFile();
         if (!f) {
             return;
         }
         if (this.dirname) {
-            const n = path.join(this.dirname, newName);
-            vscode.window.showInformationMessage(`${f.fileName} is copied to ${n}`);
+            const oldPath = path.join(this.dirname, f.fileName);
+
+            try {
+                // Handle absolute vs relative paths
+                let targetPath: string;
+                if (path.isAbsolute(newPath)) {
+                    targetPath = newPath;
+                } else {
+                    targetPath = path.join(this.dirname, newPath);
+                }
+                
+                let newFileName = path.basename(targetPath);
+                // Check if target path is an existing directory
+                if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
+                    targetPath = path.join(targetPath, f.fileName);
+                    newFileName = f.fileName;
+                }
+
+                // Create target directory if it doesn't exist
+                const targetDir = path.dirname(targetPath);
+                if (!fs.existsSync(targetDir)) {
+                    fs.mkdirSync(targetDir, { recursive: true });
+                }
+
+                // Check if source is directory or file and copy accordingly
+                const sourceStat = fs.statSync(oldPath);
+                if (sourceStat.isDirectory()) {
+                    await this.copyDirectory(oldPath, targetPath);
+                } else {
+                    fs.copyFileSync(oldPath, targetPath);
+                }
+
+                if (f.fileName === newFileName) {
+                    vscode.window.showInformationMessage(`${f.fileName} copied to ${targetPath}`);
+                } else {
+                    vscode.window.showInformationMessage(`${f.fileName} copied as ${newFileName}`);
+                }
+
+                this.reload();
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to copy ${f.fileName}: ${error}`);
+            }
+        }
+    }
+
+    private async copyDirectory(source: string, target: string): Promise<void> {
+        // Create target directory
+        if (!fs.existsSync(target)) {
+            fs.mkdirSync(target, { recursive: true });
+        }
+
+        // Read directory contents
+        const items = fs.readdirSync(source);
+        
+        for (const item of items) {
+            const sourcePath = path.join(source, item);
+            const targetPath = path.join(target, item);
+            const stat = fs.statSync(sourcePath);
+
+            if (stat.isDirectory()) {
+                await this.copyDirectory(sourcePath, targetPath);
+            } else {
+                fs.copyFileSync(sourcePath, targetPath);
+            }
         }
     }
 
