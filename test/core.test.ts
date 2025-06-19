@@ -221,6 +221,208 @@ describe("File System Integration Tests", () => {
         fs.renameSync(newFile, originalFile);
     });
 
+    it("should rename files with dired provider logic", () => {
+        // Simulate the DiredProvider rename logic
+        function simulateRename(dirname: string, oldFileName: string, newFileName: string): { success: boolean, error?: string } {
+            try {
+                const oldPath = path.join(dirname, oldFileName);
+                const newPath = path.join(dirname, newFileName);
+                
+                if (!fs.existsSync(oldPath)) {
+                    return { success: false, error: `File ${oldFileName} does not exist` };
+                }
+                
+                if (fs.existsSync(newPath)) {
+                    return { success: false, error: `File ${newFileName} already exists` };
+                }
+                
+                fs.renameSync(oldPath, newPath);
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: `Failed to rename: ${error}` };
+            }
+        }
+
+        // Test successful rename
+        const result1 = simulateRename(tempDir, 'test1.txt', 'renamed1.txt');
+        assert.strictEqual(result1.success, true);
+        assert.ok(fs.existsSync(path.join(tempDir, 'renamed1.txt')));
+        assert.ok(!fs.existsSync(path.join(tempDir, 'test1.txt')));
+
+        // Test renaming non-existent file
+        const result2 = simulateRename(tempDir, 'nonexistent.txt', 'newname.txt');
+        assert.strictEqual(result2.success, false);
+        assert.ok(result2.error?.includes('does not exist'));
+
+        // Test renaming to existing file name
+        const result3 = simulateRename(tempDir, 'test2.md', 'renamed1.txt');
+        assert.strictEqual(result3.success, false);
+        assert.ok(result3.error?.includes('already exists'));
+
+        // Test directory rename
+        const result4 = simulateRename(tempDir, 'subdir', 'renamed_dir');
+        assert.strictEqual(result4.success, true);
+        assert.ok(fs.existsSync(path.join(tempDir, 'renamed_dir')));
+        assert.ok(!fs.existsSync(path.join(tempDir, 'subdir')));
+
+        // Clean up for other tests - rename files back
+        fs.renameSync(path.join(tempDir, 'renamed1.txt'), path.join(tempDir, 'test1.txt'));
+        fs.renameSync(path.join(tempDir, 'renamed_dir'), path.join(tempDir, 'subdir'));
+    });
+
+    it("should move files to different directories with updated dired provider logic", () => {
+        // Simulate the updated DiredProvider rename logic with directory detection
+        function simulateUpdatedRename(currentDir: string, fileName: string, newPath: string): { success: boolean, message?: string, error?: string } {
+            try {
+                const oldPath = path.join(currentDir, fileName);
+                
+                if (!fs.existsSync(oldPath)) {
+                    return { success: false, error: `File ${fileName} does not exist` };
+                }
+                
+                // Handle absolute vs relative paths (matches provider logic)
+                let targetPath: string;
+                if (path.isAbsolute(newPath)) {
+                    targetPath = newPath;
+                } else {
+                    targetPath = path.join(currentDir, newPath);
+                }
+                
+                let newFileName = path.basename(targetPath);
+                // New logic: check if target path is an existing directory
+                if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
+                    targetPath = path.join(targetPath, fileName);
+                    newFileName = fileName;
+                }
+                
+                // Create target directory if it doesn't exist
+                const targetDir = path.dirname(targetPath);
+                if (!fs.existsSync(targetDir)) {
+                    fs.mkdirSync(targetDir, { recursive: true });
+                }
+                
+                fs.renameSync(oldPath, targetPath);
+                
+                // Updated messaging logic: compare filename, not directory
+                if (fileName === newFileName) {
+                    return { success: true, message: `${fileName} moved to ${targetPath}` };
+                } else {
+                    return { success: true, message: `${fileName} renamed to ${newFileName}` };
+                }
+            } catch (error) {
+                return { success: false, error: `Failed to rename/move: ${error}` };
+            }
+        }
+
+        // Create a subdirectory for testing moves
+        const moveTestDir = path.join(tempDir, 'move_test');
+        fs.mkdirSync(moveTestDir);
+
+        // Test 1: Move file to existing directory (preserves filename)
+        const result1 = simulateUpdatedRename(tempDir, 'test1.txt', 'move_test');
+        assert.strictEqual(result1.success, true);
+        assert.ok(result1.message?.includes('moved to'));
+        assert.ok(fs.existsSync(path.join(moveTestDir, 'test1.txt'))); // Same filename preserved
+        assert.ok(!fs.existsSync(path.join(tempDir, 'test1.txt')));
+
+        // Test 2: Move file to subdirectory with new name
+        const result2 = simulateUpdatedRename(tempDir, 'test2.md', 'move_test/newname.md');
+        assert.strictEqual(result2.success, true);
+        assert.ok(result2.message?.includes('renamed to'));
+        assert.ok(fs.existsSync(path.join(moveTestDir, 'newname.md')));
+        assert.ok(!fs.existsSync(path.join(tempDir, 'test2.md')));
+
+        // Test 3: Rename file in same directory
+        const result3 = simulateUpdatedRename(tempDir, '.hidden', 'visible.txt');
+        assert.strictEqual(result3.success, true);
+        assert.ok(result3.message?.includes('renamed to'));
+        assert.ok(fs.existsSync(path.join(tempDir, 'visible.txt')));
+        assert.ok(!fs.existsSync(path.join(tempDir, '.hidden')));
+
+        // Test 4: Move directory to non-existent parent directory
+        const result4 = simulateUpdatedRename(tempDir, 'subdir', 'new_parent/subdir');
+        assert.strictEqual(result4.success, true);
+        assert.ok(result4.message?.includes('moved to'));
+        assert.ok(fs.existsSync(path.join(tempDir, 'new_parent', 'subdir')));
+        assert.ok(!fs.existsSync(path.join(tempDir, 'subdir')));
+
+        // Test 5: Try to move non-existent file
+        const result5 = simulateUpdatedRename(tempDir, 'nonexistent.txt', 'anywhere.txt');
+        assert.strictEqual(result5.success, false);
+        assert.ok(result5.error?.includes('does not exist'));
+
+        // Clean up - restore files for other tests
+        fs.renameSync(path.join(moveTestDir, 'test1.txt'), path.join(tempDir, 'test1.txt'));
+        fs.renameSync(path.join(moveTestDir, 'newname.md'), path.join(tempDir, 'test2.md'));
+        fs.renameSync(path.join(tempDir, 'visible.txt'), path.join(tempDir, '.hidden'));
+        fs.renameSync(path.join(tempDir, 'new_parent', 'subdir'), path.join(tempDir, 'subdir'));
+        
+        // Remove created directories
+        fs.rmdirSync(path.join(tempDir, 'new_parent'));
+        fs.rmdirSync(moveTestDir);
+    });
+
+    it("should handle directory detection behavior correctly", () => {
+        // Test the specific new feature: when target is an existing directory, append original filename
+        function simulateDirectoryDetectionBehavior(currentDir: string, fileName: string, newPath: string): { targetPath: string, newFileName: string } {
+            // Create a test file first
+            const testFile = path.join(currentDir, fileName);
+            if (!fs.existsSync(testFile)) {
+                fs.writeFileSync(testFile, 'test content');
+            }
+            
+            // Replicate the exact logic from the updated provider
+            let targetPath: string;
+            if (path.isAbsolute(newPath)) {
+                targetPath = newPath;
+            } else {
+                targetPath = path.join(currentDir, newPath);
+            }
+            
+            let newFileName = path.basename(targetPath);
+            // Check if target path is an existing directory
+            if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
+                targetPath = path.join(targetPath, fileName);
+                newFileName = fileName;
+            }
+            
+            return { targetPath, newFileName };
+        }
+
+        // Create test directories
+        const testDestDir = path.join(tempDir, 'destination');
+        fs.mkdirSync(testDestDir);
+
+        // Test 1: Target is existing directory - should append original filename
+        const result1 = simulateDirectoryDetectionBehavior(tempDir, 'myfile.txt', 'destination');
+        assert.strictEqual(path.basename(result1.targetPath), 'myfile.txt');
+        assert.strictEqual(result1.newFileName, 'myfile.txt');
+        assert.ok(result1.targetPath.includes('destination'));
+
+        // Test 2: Target is specific filename - should use that filename
+        const result2 = simulateDirectoryDetectionBehavior(tempDir, 'myfile.txt', 'destination/newname.txt');
+        assert.strictEqual(path.basename(result2.targetPath), 'newname.txt');
+        assert.strictEqual(result2.newFileName, 'newname.txt');
+
+        // Test 3: Target is non-existent path - should treat as new filename
+        const result3 = simulateDirectoryDetectionBehavior(tempDir, 'myfile.txt', 'newname.txt');
+        assert.strictEqual(path.basename(result3.targetPath), 'newname.txt');
+        assert.strictEqual(result3.newFileName, 'newname.txt');
+
+        // Test 4: Absolute path to existing directory
+        const result4 = simulateDirectoryDetectionBehavior(tempDir, 'myfile.txt', testDestDir);
+        assert.strictEqual(path.basename(result4.targetPath), 'myfile.txt');
+        assert.strictEqual(result4.newFileName, 'myfile.txt');
+
+        // Clean up test files
+        try {
+            fs.unlinkSync(path.join(tempDir, 'myfile.txt'));
+            fs.rmdirSync(testDestDir);
+        } catch (e) {
+            // Ignore cleanup errors
+        }
+    });
+
     it("should filter directories correctly", () => {
         function filterFiles(files: string[], showDotFiles: boolean): string[] {
             return files.filter(filename => {

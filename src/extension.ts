@@ -68,17 +68,37 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
     });
 
     const commandCreateDir = vscode.commands.registerCommand("extension.dired.createDir", async () => {
-        let dirName = await vscode.window.showInputBox({ prompt: "Directory name" });
+        let dirName = await vscode.window.showInputBox({
+            prompt: "Directory name"
+         });
         if (!dirName) {
             return;
         }
         await provider.createDir(dirName);
     });
-    const commandRename = vscode.commands.registerCommand("extension.dired.rename", () => {
-        vscode.window.showInputBox()
-            .then((newName: string) => {
-                provider.rename(newName);
-            });
+    const commandRename = vscode.commands.registerCommand("extension.dired.rename", async () => {
+        const f = provider.getFile();
+        if (!f) {
+            vscode.window.showErrorMessage("No file selected");
+            return;
+        }
+        
+        const currentDir = provider.dirname;
+        if (!currentDir) {
+            vscode.window.showErrorMessage("No current directory found");
+            return;
+        }
+        
+        const currentPath = path.join(currentDir, f.fileName);
+        const newPath = await vscode.window.showInputBox({
+            prompt: "New path (rename or move file)",
+            value: currentPath,
+            valueSelection: [currentPath.lastIndexOf('/') + 1, currentPath.length]
+        });
+        
+        if (newPath) {
+            await provider.rename(newPath);
+        }
     });
     const commandCopy = vscode.commands.registerCommand("extension.dired.copy", () => {
         vscode.window.showInputBox()

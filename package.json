@@ -72,7 +72,7 @@
         "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },
       {
-        "key": "r",
+        "key": "shift+r",
         "command": "extension.dired.rename",
         "when": "dired.open && editorTextFocus && !findWidgetVisible && !inQuickOpen && !dired.wdired"
       },

@@ -28,7 +28,7 @@ Keybindings follow standard Emacs dired conventions as default:
 ### File Operations
 - `Enter` / `f` / `o` - Open file or enter directory
 - `^` - Go up to parent directory
-- `r` - Rename file
+- `shift+r` (R) - Rename file
 - `c` - Copy file
 - `d` - Delete file
 - `+` - Create new directory
