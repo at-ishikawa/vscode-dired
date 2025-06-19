@@ -6,13 +6,16 @@
 
 This is a port from Emacs dired-mode.
 
+## Why forked?
+
+There are 2 challenges I faced in the original vscode-dired.
+
+- The keybindings are different from original Emacs
+- There is no feature for a directory back or writable directory mode
+
 ## Features
 
 Filer used by only keyboard.
-
-## Configuration
-
-- `extension.dired.open`
 
 ## Key Bindings
 
@@ -28,9 +31,9 @@ Keybindings follow standard Emacs dired conventions as default:
 ### File Operations
 - `Enter` / `f` / `o` - Open file or enter directory
 - `^` - Go up to parent directory
-- `shift+r (R)` - Rename file
-- `shift+c (C)` - Copy file
-- `shift+d (D)` - Delete file
+- `shift+r (R)` - Rename or move file or directory
+- `shift+c (C)` - Copy file or directory
+- `shift+d (D)` - Delete file or directory recursively
 - `+` - Create new directory
 
 ### Buffer Operations
