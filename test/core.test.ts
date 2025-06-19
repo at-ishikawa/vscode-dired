@@ -566,6 +566,131 @@ describe("File System Integration Tests", () => {
         removeDirectory(copyTestDir);
     });
 
+    it("should delete files and directories with dired provider logic", () => {
+        // Simulate the DiredProvider delete logic
+        function simulateDelete(currentDir: string, fileName: string, confirmRecursive: boolean = true): { success: boolean, message?: string, error?: string } {
+            try {
+                const targetPath = path.join(currentDir, fileName);
+                
+                if (!fs.existsSync(targetPath)) {
+                    return { success: false, error: `File ${fileName} does not exist` };
+                }
+                
+                const stat = fs.statSync(targetPath);
+                
+                if (stat.isDirectory()) {
+                    return simulateDeleteDirectory(targetPath, confirmRecursive);
+                } else {
+                    fs.unlinkSync(targetPath);
+                    return { success: true, message: `${fileName} was deleted` };
+                }
+            } catch (error) {
+                return { success: false, error: `Failed to delete: ${error}` };
+            }
+        }
+
+        function simulateDeleteDirectory(dirPath: string, confirmRecursive: boolean): { success: boolean, message?: string, error?: string } {
+            const dirName = path.basename(dirPath);
+            
+            // Check if directory is empty (no additional confirmation needed)
+            const items = fs.readdirSync(dirPath);
+            if (items.length === 0) {
+                deleteDirectoryRecursive(dirPath);
+                return { success: true, message: `Directory ${dirName} was deleted` };
+            }
+
+            // Non-empty directory - check confirmation (single confirmation only)
+            if (!confirmRecursive) {
+                return { success: false, message: `Directory "${dirName}" deletion not confirmed.` };
+            }
+
+            deleteDirectoryRecursive(dirPath);
+            return { success: true, message: `Directory ${dirName} was deleted` };
+        }
+
+        function deleteDirectoryRecursive(dirPath: string): void {
+            const items = fs.readdirSync(dirPath);
+            
+            for (const item of items) {
+                const itemPath = path.join(dirPath, item);
+                const stat = fs.statSync(itemPath);
+                
+                if (stat.isDirectory()) {
+                    deleteDirectoryRecursive(itemPath);
+                } else {
+                    fs.unlinkSync(itemPath);
+                }
+            }
+            
+            fs.rmdirSync(dirPath);
+        }
+
+        // Create test directory structure
+        const deleteTestDir = path.join(tempDir, 'delete_test');
+        fs.mkdirSync(deleteTestDir);
+        
+        // Create test files
+        fs.writeFileSync(path.join(deleteTestDir, 'file1.txt'), 'content1');
+        fs.writeFileSync(path.join(deleteTestDir, 'file2.md'), 'content2');
+        
+        // Create empty directory
+        const emptyDir = path.join(deleteTestDir, 'empty_dir');
+        fs.mkdirSync(emptyDir);
+        
+        // Create non-empty directory with nested structure
+        const nonEmptyDir = path.join(deleteTestDir, 'non_empty_dir');
+        fs.mkdirSync(nonEmptyDir);
+        fs.writeFileSync(path.join(nonEmptyDir, 'nested_file.txt'), 'nested content');
+        
+        const nestedDir = path.join(nonEmptyDir, 'nested_dir');
+        fs.mkdirSync(nestedDir);
+        fs.writeFileSync(path.join(nestedDir, 'deep_file.txt'), 'deep content');
+
+        // Test 1: Delete regular file
+        const result1 = simulateDelete(deleteTestDir, 'file1.txt');
+        assert.strictEqual(result1.success, true);
+        assert.ok(result1.message?.includes('was deleted'));
+        assert.ok(!fs.existsSync(path.join(deleteTestDir, 'file1.txt')));
+
+        // Test 2: Delete empty directory
+        const result2 = simulateDelete(deleteTestDir, 'empty_dir');
+        assert.strictEqual(result2.success, true);
+        assert.ok(result2.message?.includes('was deleted'));
+        assert.ok(!fs.existsSync(emptyDir));
+
+        // Test 3: Delete non-empty directory with confirmation
+        const result3 = simulateDelete(deleteTestDir, 'non_empty_dir', true);
+        assert.strictEqual(result3.success, true);
+        assert.ok(result3.message?.includes('was deleted'));
+        assert.ok(!fs.existsSync(nonEmptyDir));
+
+        // Test 4: Try to delete non-empty directory without confirmation
+        // Recreate the non-empty directory for this test
+        fs.mkdirSync(nonEmptyDir);
+        fs.writeFileSync(path.join(nonEmptyDir, 'test_file.txt'), 'test');
+        
+        const result4 = simulateDelete(deleteTestDir, 'non_empty_dir', false);
+        assert.strictEqual(result4.success, false);
+        assert.ok(result4.message?.includes('deletion not confirmed'));
+        assert.ok(fs.existsSync(nonEmptyDir)); // Should still exist
+
+        // Test 5: Try to delete non-existent file
+        const result5 = simulateDelete(deleteTestDir, 'nonexistent.txt');
+        assert.strictEqual(result5.success, false);
+        assert.ok(result5.error?.includes('does not exist'));
+
+        // Test 6: Verify nested structure is properly deleted
+        // Clean up the remaining non-empty directory
+        const result6 = simulateDelete(deleteTestDir, 'non_empty_dir', true);
+        assert.strictEqual(result6.success, true);
+        assert.ok(!fs.existsSync(nonEmptyDir));
+        assert.ok(!fs.existsSync(path.join(nonEmptyDir, 'test_file.txt')));
+
+        // Clean up remaining test file and directory
+        fs.unlinkSync(path.join(deleteTestDir, 'file2.md'));
+        fs.rmdirSync(deleteTestDir);
+    });
+
     it("should filter directories correctly", () => {
         function filterFiles(files: string[], showDotFiles: boolean): string[] {
             return files.filter(filename => {

@@ -321,17 +321,47 @@ export default class DiredProvider {
         }
     }
 
-    delete() {
+    async delete() {
         const f = this.getFile();
         if (!f) {
             return;
         }
         if (this.dirname) {
-            const n = path.join(this.dirname, f.fileName);
-            fs.unlinkSync(n);
-            this.reload();
-            vscode.window.showInformationMessage(`${n} was deleted`);
+            const targetPath = path.join(this.dirname, f.fileName);
+            
+            try {
+                const stat = fs.statSync(targetPath);
+                
+                if (stat.isDirectory()) {
+                    this.deleteDirectoryRecursive(targetPath);
+                    vscode.window.showInformationMessage(`Directory ${f.fileName} was deleted`);
+                } else {
+                    fs.unlinkSync(targetPath);
+                    vscode.window.showInformationMessage(`${f.fileName} was deleted`);
+                }
+                
+                this.reload();
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to delete ${f.fileName}: ${error}`);
+            }
         }
+    }
+
+    private deleteDirectoryRecursive(dirPath: string): void {
+        const items = fs.readdirSync(dirPath);
+        
+        for (const item of items) {
+            const itemPath = path.join(dirPath, item);
+            const stat = fs.statSync(itemPath);
+            
+            if (stat.isDirectory()) {
+                this.deleteDirectoryRecursive(itemPath);
+            } else {
+                fs.unlinkSync(itemPath);
+            }
+        }
+        
+        fs.rmdirSync(dirPath);
     }
 
     select() {

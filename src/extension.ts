@@ -125,12 +125,52 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         }
     });
 
-    const commandDelete = vscode.commands.registerCommand("extension.dired.delete", () => {
-        vscode.window.showInformationMessage("Delete this file ?", {modal: true}, "Yes", "No").then(item => {
-                if (item == "Yes") {
-                    provider.delete();
+    const commandDelete = vscode.commands.registerCommand("extension.dired.delete", async () => {
+        const f = provider.getFile();
+        if (!f) {
+            vscode.window.showErrorMessage("No file selected");
+            return;
+        }
+
+        const currentDir = provider.dirname;
+        if (!currentDir) {
+            vscode.window.showErrorMessage("No current directory found");
+            return;
+        }
+
+        const targetPath = path.join(currentDir, f.fileName);
+        
+        try {
+            const stat = fs.statSync(targetPath);
+            let confirmationMessage: string;
+            let isRecursive = false;
+            
+            if (stat.isDirectory()) {
+                const items = fs.readdirSync(targetPath);
+                if (items.length === 0) {
+                    confirmationMessage = `Delete empty directory "${f.fileName}"?`;
+                } else {
+                    confirmationMessage = `Delete directory "${f.fileName}" and its ${items.length} item(s) recursively?`;
+                    isRecursive = true;
                 }
-            });
+            } else {
+                confirmationMessage = `Delete file "${f.fileName}"?`;
+            }
+
+            const deleteButton = isRecursive ? "Delete Recursively" : "Delete";
+            const confirmation = await vscode.window.showWarningMessage(
+                confirmationMessage,
+                { modal: true },
+                deleteButton,
+                "Cancel"
+            );
+
+            if (confirmation === deleteButton) {
+                await provider.delete();
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to access ${f.fileName}: ${error}`);
+        }
     });
 
     const commandGoUpDir = vscode.commands.registerCommand("extension.dired.goUpDir", () => {

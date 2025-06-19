@@ -30,7 +30,7 @@ Keybindings follow standard Emacs dired conventions as default:
 - `^` - Go up to parent directory
 - `shift+r (R)` - Rename file
 - `shift+c (C)` - Copy file
-- `d` - Delete file
+- `shift+d (D)` - Delete file
 - `+` - Create new directory
 
 ### Buffer Operations
