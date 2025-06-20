@@ -25,19 +25,36 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
 
     const provider = new DiredProvider(fixed_window);
     const commandOpen = vscode.commands.registerCommand("extension.dired.open", () => {
-        let dir = vscode.workspace.rootPath;
+        let dir: string | undefined;
         const at = vscode.window.activeTextEditor;
+        
         if (at) {
             if (provider.isDiredDocument(at.document)) {
+                // If we're in a dired buffer, use its directory
                 dir = provider.dirname;
-            } else {
-                const doc = at.document;
-                dir = path.dirname(doc.fileName);
+            } else if (at.document.fileName && !at.document.isUntitled) {
+                // If it's a regular file with a valid path, use its directory
+                try {
+                    const filePath = at.document.fileName;
+                    if (fs.existsSync(filePath)) {
+                        dir = path.dirname(filePath);
+                    }
+                } catch {
+                    // Ignore errors for invalid paths
+                }
             }
         }
+        
+        // If we couldn't get a directory from the active editor, use workspace root
         if (!dir) {
-            dir = require('os').homedir();
+            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                dir = vscode.workspace.workspaceFolders[0].uri.fsPath;
+            } else {
+                // Only fall back to home directory if there's no workspace
+                dir = require('os').homedir();
+            }
         }
+        
         if (dir) {
             if (!ask_dir) {
                 provider.openDir(dir);
