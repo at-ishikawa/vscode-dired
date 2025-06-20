@@ -2,12 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(npx @vscode/vsce package:*)",
-      "Bash(npm run compile:*)",
-      "Bash(npm run lint)",
+      "Bash(npm test)",
+      "Bash(./node_modules/.bin/mocha out/test/*.js)",
       "Bash(npm run test-unit:*)",
       "Bash(npm run test-vscode:*)",
       "Bash(npm run test-all:*)",
-      "Bash(npm test)"
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(npx mocha:*)",
+      "Bash(node:*)",
+      "Bash(npm run test:*)"
     ],
     "deny": []
   }
