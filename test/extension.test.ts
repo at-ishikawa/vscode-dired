@@ -12,12 +12,12 @@ import * as vscode from 'vscode';
 suite("VSCode Extension Tests", () => {
 
     test("Extension should be present", () => {
-        const extension = vscode.extensions.getExtension("rrudi.vscode-dired");
+        const extension = vscode.extensions.getExtension("at-ishikawa.vscode-dired-mode");
         assert.ok(extension, "vscode-dired extension should be installed");
     });
 
     test("Extension should be activatable", async () => {
-        const extension = vscode.extensions.getExtension("rrudi.vscode-dired");
+        const extension = vscode.extensions.getExtension("at-ishikawa.vscode-dired-mode");
         assert.ok(extension, "Extension should be found");
         // Don't force activation to avoid file system issues in test environment
     });
