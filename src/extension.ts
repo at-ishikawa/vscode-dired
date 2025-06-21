@@ -24,6 +24,10 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
     }
 
     const provider = new DiredProvider(fixed_window);
+    
+    // Register the provider as a TextDocumentContentProvider
+    const providerRegistration = vscode.workspace.registerTextDocumentContentProvider(DiredProvider.scheme, provider);
+    
     const commandOpen = vscode.commands.registerCommand("extension.dired.open", () => {
         let dir: string | undefined;
         const at = vscode.window.activeTextEditor;
@@ -328,6 +332,12 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
 
     const documentCloseHandler = vscode.workspace.onDidCloseTextDocument((document) => {
         if (provider.isDiredDocument(document)) {
+            // If it's a wdired document being closed, clean up
+            if (provider.isWdiredMode(document)) {
+                // Exit wdired mode without committing changes
+                provider.exitWdiredMode(false);
+            }
+            
             // Check if there are any other dired documents still open
             const stillHasDiredOpen = vscode.window.visibleTextEditors.some(editor =>
                 provider.isDiredDocument(editor.document)
@@ -341,6 +351,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
 
     context.subscriptions.push(
         provider,
+        providerRegistration,
         commandOpen,
         commandEnter,
         commandToggleDotFiles,

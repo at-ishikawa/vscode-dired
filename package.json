@@ -138,7 +138,8 @@
         "extensions": [
           ""
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "filenamePatterns": ["dired://**"]
       },
       {
         "id": "wdired",

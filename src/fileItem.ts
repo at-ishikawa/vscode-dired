@@ -108,8 +108,7 @@ export default class FileItem {
         if (this._isDirectory) {
             return vscode.Uri.parse(`${DiredProvider.scheme}://${p}`);
         } else if (this._isFile) {
-            const u = pathToFileURL(p);
-            return vscode.Uri.parse(u.href);
+            return vscode.Uri.file(p);
         }
         return undefined;
     }
