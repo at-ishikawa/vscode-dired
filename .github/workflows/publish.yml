@@ -1,0 +1,59 @@
+name: Publish VSCode Extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Trigger on version tags like v0.1.0, v1.2.3, etc.
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: |
+        npm run compile
+        npm run test-unit
+
+    - name: Package extension
+      run: npx @vscode/vsce package
+
+    - name: Publish to Visual Studio Marketplace
+      env:
+        VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      run: npx @vscode/vsce publish -p $VSCE_PAT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: '*.vsix'
+        body: |
+          VSCode Dired Mode Extension ${{ github.ref_name }}
+          
+          ## Installation
+          
+          ### From Marketplace
+          Search for "vscode-dired-mode" in VSCode Extensions or visit the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=at-ishikawa.vscode-dired-mode).
+          
+          ### Manual Installation
+          Download the `.vsix` file from the assets below and install using:
+          ```bash
+          code --install-extension vscode-dired-mode-*.vsix
+          ```
+          
+          ## What's Changed
+          See [CHANGELOG.md](https://github.com/at-ishikawa/vscode-dired/blob/main/CHANGELOG.md) for details.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
