@@ -33,7 +33,7 @@ npm run test
 npx @vscode/vsce package
 
 # Install packaged extension to VSCode
-code --install-extension vscode-dired-X.X.X.vsix
+code --install-extension vscode-dired-mode-X.X.X.vsix
 ```
 
 ## Architecture Overview
@@ -82,7 +82,7 @@ Key package.json configurations:
 After making changes:
 1. Run `npm run compile` to build TypeScript
 2. Package with `npx @vscode/vsce package`
-3. Install with `code --install-extension vscode-dired-X.X.X.vsix`
+3. Install with `code --install-extension vscode-dired-mode-X.X.X.vsix`
 4. Test using `Ctrl+X F` to open dired buffer
 
 The extension uses the `dired` language mode for syntax highlighting of the directory listing format.

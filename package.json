@@ -7,10 +7,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/at-ishikawa/vscode-dired"
+    "url": "https://github.com/at-ishikawa/vscode-dired-mode"
   },
   "bugs": {
-    "url": "https://github.com/at-ishikawa/vscode-dired/issues"
+    "url": "https://github.com/at-ishikawa/vscode-dired-mode/issues"
   },
   "engines": {
     "vscode": "^1.85.0"

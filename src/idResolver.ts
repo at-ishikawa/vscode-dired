@@ -22,7 +22,7 @@ export class IDResolver {
     private create(user: boolean){
         // create a cache file in the user's home directory for Windows and Unix
         const home = require('os').homedir();
-        const cache_file = user ? '.vscode-dired-user-cache' : '.vscode-dired-group-cache';
+        const cache_file = user ? '.vscode-dired-mode-user-cache' : '.vscode-dired-mode-group-cache';
         const cache_path = path.join(home, cache_file);
 
         if (fs.existsSync(cache_path) === false) {
@@ -98,8 +98,8 @@ export class IDResolver {
         this._group_cache.clear();
 
         // Remove cache files to force refresh
-        const userCachePath = path.join(home, '.vscode-dired-user-cache');
-        const groupCachePath = path.join(home, '.vscode-dired-group-cache');
+        const userCachePath = path.join(home, '.vscode-dired-mode-user-cache');
+        const groupCachePath = path.join(home, '.vscode-dired-mode-group-cache');
 
         try {
             if (fs.existsSync(userCachePath)) {

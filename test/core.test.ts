@@ -141,7 +141,7 @@ describe("File System Integration Tests", () => {
 
     beforeEach(() => {
         // Create a temporary directory for testing
-        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-dired-test-'));
+        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-dired-mode-test-'));
         testFiles = [];
         
         // Create some test files

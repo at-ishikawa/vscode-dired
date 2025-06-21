@@ -1,6 +1,6 @@
 # Testing Documentation
 
-This document describes the testing strategy and available tests for the vscode-dired extension.
+This document describes the testing strategy and available tests for the vscode-dired-mode extension.
 
 ## Test Structure
 

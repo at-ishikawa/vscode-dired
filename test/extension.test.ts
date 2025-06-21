@@ -13,7 +13,7 @@ suite("VSCode Extension Tests", () => {
 
     test("Extension should be present", () => {
         const extension = vscode.extensions.getExtension("at-ishikawa.vscode-dired-mode");
-        assert.ok(extension, "vscode-dired extension should be installed");
+        assert.ok(extension, "vscode-dired-mode extension should be installed");
     });
 
     test("Extension should be activatable", async () => {
