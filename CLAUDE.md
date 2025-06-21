@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Document Organization
+
+All Claude-specific documentation (test plans, implementation notes, etc.) should be stored in the `.claude/` directory to keep the main repository clean. This includes:
+- Test cases and test plans
+- Implementation notes and changes
+- Any temporary documentation created during development sessions
+
+Do not create these files in the root directory.
+
 ## Development Commands
 
 ```bash
