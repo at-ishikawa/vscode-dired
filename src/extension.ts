@@ -227,8 +227,8 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         function* completionFunc(filePathOrDirPath: string): IterableIterator<vscode.QuickPickItem> {
             let dirname: string;
             if (!path.isAbsolute(filePathOrDirPath)) {
-                if (provider.dirname == undefined)
-                    return
+                if (provider.dirname === undefined)
+                    {return;}
                 filePathOrDirPath = path.join(provider.dirname, filePathOrDirPath);
             }
             try {
@@ -257,7 +257,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
                     detail: "Create " + path.basename(filePathOrDirPath),
                     label: filePathOrDirPath,
                     buttons: [ { iconPath: vscode.ThemeIcon.File } ]
-                }
+                };
                 dirname = path.dirname(filePathOrDirPath);
                 try {
                     fs.accessSync(filePathOrDirPath, fs.constants.F_OK);
@@ -270,19 +270,19 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
             for (let name of fs.readdirSync(dirname)) {
                 const fullpath = path.join(dirname, name);
                 if (fs.statSync(fullpath).isDirectory())
-                    yield {
+                    {yield {
                         label: fullpath, detail: "Open " + name + "/",
                         buttons: [ { iconPath: vscode.ThemeIcon.Folder } ]
-                    }
+                    };}
                 else
-                    yield {
+                    {yield {
                         label: fullpath, detail: "Open" + name,
                         buttons: [ { iconPath: vscode.ThemeIcon.File } ]
-                    }
+                    };}
             }
         }
         function processSelf(self: vscode.QuickPick<vscode.QuickPickItem>) {
-            self.placeholder = "Create File or Open"
+            self.placeholder = "Create File or Open";
         }
         let fileName = await autocompletedInputBox(
             {
@@ -295,18 +295,18 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         try {
             let stat = await fs.promises.stat(fileName);
             if (stat.isDirectory())
-                isDirectory = true;
+                {isDirectory = true;}
         }
         catch {
-            await fs.promises.mkdir(path.dirname(fileName), { recursive: true })
+            await fs.promises.mkdir(path.dirname(fileName), { recursive: true });
             await fs.promises.writeFile(fileName, "");
         }
 
         if (isDirectory) {
-            provider.openDir(fileName)
+            provider.openDir(fileName);
         }
         else {
-            await provider.createFile(fileName)
+            await provider.createFile(fileName);
         }
 
     });

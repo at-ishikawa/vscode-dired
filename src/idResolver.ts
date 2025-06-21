@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path'
+import * as path from 'path';
 
 export class IDResolver {
     private _user_cache = new Map<Number, string>();

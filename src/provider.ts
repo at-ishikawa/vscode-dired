@@ -6,7 +6,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 import FileItem from './fileItem';
-import * as autoBox from './autocompletedInputBox'
+import * as autoBox from './autocompletedInputBox';
 
 const FIXED_URI: vscode.Uri = vscode.Uri.parse('dired://fixed_window');
 
@@ -184,7 +184,7 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
                 let newFileName = path.basename(targetPath);
                 // check if this file is a directory
                 if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
-                    targetPath = path.join(targetPath, f.fileName)
+                    targetPath = path.join(targetPath, f.fileName);
                     newFileName = f.fileName;
                 }
 
@@ -196,7 +196,7 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
 
                 fs.renameSync(oldPath, targetPath);
 
-                if (f.fileName == newFileName) {
+                if (f.fileName === newFileName) {
                     vscode.window.showInformationMessage(`${f.fileName} moved to ${targetPath}`);
                 } else {
                     vscode.window.showInformationMessage(`${f.fileName} renamed to ${newFileName}`);
@@ -644,10 +644,10 @@ export default class DiredProvider implements vscode.TextDocumentContentProvider
             }
         }).filter((fileItem) => {
             if (fileItem) {
-                if (this._show_dot_files) return true;
+                if (this._show_dot_files) {return true;}
                 let filename = fileItem.fileName;
-                if (filename == '..' || filename == '.') return true;
-                return filename.substring(0, 1) != '.';
+                if (filename === '..' || filename === '.') {return true;}
+                return filename.substring(0, 1) !== '.';
             } else {
                 return false;
             }

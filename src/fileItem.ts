@@ -115,7 +115,7 @@ export default class FileItem {
 
     pad(num:number, size:number, p: string): string {
         var s = num+"";
-        while (s.length < size) s = p + s;
+        while (s.length < size) {s = p + s;}
         return s;
     }
 }

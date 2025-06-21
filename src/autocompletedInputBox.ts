@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 export function defaultFinishCondition(self: vscode.QuickPick<vscode.QuickPickItem>) {
-    if (self.selectedItems.length == 0 || self.selectedItems[0].label == self.value) {
+    if (self.selectedItems.length === 0 || self.selectedItems[0].label === self.value) {
         return true;
     }
     else {
@@ -20,8 +20,8 @@ export async function autocompletedInputBox<T>(
     const processSelf = arg.withSelf;
 
     let finishCondition = defaultFinishCondition;
-    if (arg.stopWhen != undefined)
-        finishCondition = defaultFinishCondition
+    if (arg.stopWhen !== undefined)
+        {finishCondition = defaultFinishCondition;}
 
 
     const quickPick = vscode.window.createQuickPick();
@@ -29,12 +29,12 @@ export async function autocompletedInputBox<T>(
     let disposables: vscode.Disposable[] = [];
     let result = quickPick.value;
     if (processSelf !== undefined)
-        processSelf(quickPick);
+        {processSelf(quickPick);}
 
     let makeTask = () => new Promise<void>(resolve => {
         disposables.push(
             quickPick.onDidChangeValue(directoryOrFile => {
-                quickPick.items = Array.from(completionFunc(quickPick.value))
+                quickPick.items = Array.from(completionFunc(quickPick.value));
                 return 0;
             }),
             quickPick.onDidAccept(() => {
