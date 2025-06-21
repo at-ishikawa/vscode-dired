@@ -2,7 +2,7 @@
   "name": "vscode-dired-mode",
   "displayName": "vscode-dired-mode",
   "description": "dired(File Manager) for VSCode, like Emacs",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "at-ishikawa",
   "license": "Apache-2.0",
   "repository": {
