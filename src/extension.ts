@@ -24,14 +24,25 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
     }
 
     const provider = new DiredProvider(fixed_window);
-    
+
     // Register the provider as a TextDocumentContentProvider
     const providerRegistration = vscode.workspace.registerTextDocumentContentProvider(DiredProvider.scheme, provider);
-    
-    const commandOpen = vscode.commands.registerCommand("extension.dired.open", () => {
-        let dir: string | undefined;
+
+    const commandOpen = vscode.commands.registerCommand("extension.dired.open", (dir?: string) => {
+        // if the dir was provided as an argument make sure it is valid and just use it. 
+        if (dir) {
+            try {
+                const st = fs.lstatSync(dir);
+                const target = st.isDirectory() ? dir : path.dirname(dir);
+                provider.openDir(path.resolve(target));
+                return;
+            } catch (error) {
+                vscode.window.showErrorMessage(`Invalid directory using fallback functionality: ${error}`);
+                dir = undefined;
+            }
+        }
+
         const at = vscode.window.activeTextEditor;
-        
         if (at) {
             if (provider.isDiredDocument(at.document)) {
                 // If we're in a dired buffer, use its directory
@@ -91,7 +102,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
     const commandCreateDir = vscode.commands.registerCommand("extension.dired.createDir", async () => {
         let dirName = await vscode.window.showInputBox({
             prompt: "Directory name"
-         });
+        });
         if (!dirName) {
             return;
         }
@@ -227,8 +238,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
         function* completionFunc(filePathOrDirPath: string): IterableIterator<vscode.QuickPickItem> {
             let dirname: string;
             if (!path.isAbsolute(filePathOrDirPath)) {
-                if (provider.dirname === undefined)
-                    {return;}
+                if (provider.dirname === undefined) { return; }
                 filePathOrDirPath = path.join(provider.dirname, filePathOrDirPath);
             }
             try {
@@ -238,47 +248,47 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
                     yield {
                         detail: "Open " + path.basename(filePathOrDirPath) + "/",
                         label: filePathOrDirPath,
-                        buttons: [ { iconPath: vscode.ThemeIcon.Folder } ]
+                        buttons: [{ iconPath: vscode.ThemeIcon.Folder }]
                     };
                 }
                 else {
                     yield {
                         detail: "Open " + path.basename(filePathOrDirPath),
                         label: filePathOrDirPath,
-                        buttons: [ { iconPath: vscode.ThemeIcon.File } ]
+                        buttons: [{ iconPath: vscode.ThemeIcon.File }]
                     };
 
                     dirname = path.dirname(filePathOrDirPath);
                 }
             }
-            catch
-            {
+            catch {
                 yield {
                     detail: "Create " + path.basename(filePathOrDirPath),
                     label: filePathOrDirPath,
-                    buttons: [ { iconPath: vscode.ThemeIcon.File } ]
+                    buttons: [{ iconPath: vscode.ThemeIcon.File }]
                 };
                 dirname = path.dirname(filePathOrDirPath);
                 try {
                     fs.accessSync(filePathOrDirPath, fs.constants.F_OK);
                 }
-                catch
-                {
+                catch {
                     return;
                 }
             }
             for (let name of fs.readdirSync(dirname)) {
                 const fullpath = path.join(dirname, name);
-                if (fs.statSync(fullpath).isDirectory())
-                    {yield {
+                if (fs.statSync(fullpath).isDirectory()) {
+                    yield {
                         label: fullpath, detail: "Open " + name + "/",
-                        buttons: [ { iconPath: vscode.ThemeIcon.Folder } ]
-                    };}
-                else
-                    {yield {
+                        buttons: [{ iconPath: vscode.ThemeIcon.Folder }]
+                    };
+                }
+                else {
+                    yield {
                         label: fullpath, detail: "Open" + name,
-                        buttons: [ { iconPath: vscode.ThemeIcon.File } ]
-                    };}
+                        buttons: [{ iconPath: vscode.ThemeIcon.File }]
+                    };
+                }
             }
         }
         function processSelf(self: vscode.QuickPick<vscode.QuickPickItem>) {
@@ -294,8 +304,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionInternal {
 
         try {
             let stat = await fs.promises.stat(fileName);
-            if (stat.isDirectory())
-                {isDirectory = true;}
+            if (stat.isDirectory()) { isDirectory = true; }
         }
         catch {
             await fs.promises.mkdir(path.dirname(fileName), { recursive: true });
